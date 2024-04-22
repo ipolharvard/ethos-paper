@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ethos"
+version = "0.1.0"
+description = "ETHOS: Enhanced Transformer Health Outcome Simulator"
+readme = "README.md"
+authors = [
+    { name = "Arkadiusz Sitek", email = "asitek@mgh.harvard.edu" },
+    { name = "Pawel Renc", email = "prenc@mgh.harvard.edu" },
+]
+maintainers = [
+    { name = "Pawel Renc", email = "prenc@mgh.harvard.edu" },
+]
+dependencies = [
+    'importlib-metadata; python_version>="3.10"',
+    "click",
+    "colorlog",
+    "h5py",
+    "numpy",
+    "pandas",
+    "pyarrow",
+    "torch",
+    "joblib",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+all = ["jupyter", "seaborn", "pytest", "wandb", "scikit-learn"]
+
+[project.scripts]
+ethos = "ethos.cli:run_cli"
+
+[tool.setuptools]
+packages = ["ethos"]
+
+[tool.setuptools.package-data]
+"ethos.data" = ["*"]
