@@ -15,8 +15,15 @@ Ensure your development environment is set up by following these steps:
 
 #### Setting up the Environment
 
-Python 3.10 or higher is required. Within the project root, activate development mode (`-e`) and install all necessary dependencies for
-running notebooks and scripts by executing:
+Python 3.10 or higher is required. Within the project root, activate development mode (`-e`)
+and install all necessary dependencies for running notebooks and scripts by executing:
+
+Use of a virtual environment is strongly encouraged, although not required.
+To create a new conda env:
+
+```bash
+conda create --name ethos python=3.10
+```
 
 ```bash
 pip install -e .[all]
@@ -58,12 +65,13 @@ Prepare your dataset for analysis with these steps:
            └── mimic-iv-2.2_Data_parquet <== optional (for faster loading `scripts/convert_csv_to_parquet.py`)
    ```
 
-### Workflow
+### Usage
 
-Execute the project workflow as follows:
+Execute the project pipeline as follows:
 
-1. **Dataset tokenization:** Convert the dataset from a tabular format to a tokenized format,
-   starting with the training set, followed by the testing set using the training set's vocabulary.
+1. **Dataset tokenization:** Assuming that the MIMIC dataset is prepared, convert the dataset from
+   a tabular format to a tokenized format, starting with the training set, followed by the testing
+   set using the training set's vocabulary.
    ```bash
    ethos tokenize- mimic train 
    ```
@@ -72,8 +80,14 @@ Execute the project workflow as follows:
    ethos tokenize- mimic test -v <path_to_vocab>
    ```
 2. **Model training:** Train the model on the tokenized dataset. Monitor the training process with
-   wandb (optional, check `scripts/run_training.py`). Example configuration for running on 8 GPUs
-   (adjust `--nproc_per_node` and `--gradient_accumulation_steps` to match your setup):
+   wandb (optional, check `scripts/run_training.py`). Optionally, a pre-trained model that we used
+   in our paper can be downloaded
+   from [Google Drive ≈0.5GB](https://drive.google.com/file/d/1c8_OQadiHe0ZOoOdZuF-m0N3fbRnE1EP/view?usp=sharing)
+   (requires Google Account).
+   <br>
+   Example configuration for running on 8 GPUs (adjust `--nproc_per_node`
+   and `--gradient_accumulation_steps` to match your setup):
+
    ```bash
    torchrun --no_python --standalone --nproc_per_node=8 ethos train \
      --data_train <data_path> \
@@ -96,8 +110,11 @@ Execute the project workflow as follows:
      --ctx_no_grad \
      --out_dir "out/mimic_layer_6_batch_32_do_0.3"
    ```
+
 3. **Model evaluation:** Use the trained model for predicting future health timelines based on
-   scenarios found in ethos/datasets, like ICU readmission or hospital mortality.
+   scenarios found in ethos/datasets, like ICU readmission or hospital mortality. Optionally, all
+   results that we generated for our paper can be downloaded from [Google Drive ≈0.8GB](https://drive.google.com/file/d/1BgywarK7osx8xcyzZamOgSBhMJZqKlPy/view?usp=sharing) 
+   (requires Google Account).
    ```bash
    ethos infer \
      --test readmission \
@@ -108,5 +125,5 @@ Execute the project workflow as follows:
    ```
    Refer to `scripts/run_inference.sh` for more detailed usage.
 4. **Generating results:** Use the Jupyter notebooks to generate all the results and figures:
-   - `notebooks/mimic_paper_results_agg.ipynb`
-   - `notebooks/embedding_analysis.ipynb`
+    - `notebooks/mimic_paper_results_agg.ipynb`
+    - `notebooks/embedding_analysis.ipynb`
