@@ -80,10 +80,10 @@ Execute the project pipeline as follows:
    ethos tokenize- mimic test -v <path_to_vocab>
    ```
 2. **Model training:** Train the model on the tokenized dataset. Monitor the training process with
-   wandb (optional, check `scripts/run_training.py`). Optionally, a pre-trained model that we used
-   in our paper can be downloaded
+   wandb (optional, check `scripts/run_training.py`). Optionally, a pre-trained model (with vocab
+   file) that we used in our paper can be downloaded
    from [Google Drive ≈0.5GB](https://drive.google.com/file/d/1c8_OQadiHe0ZOoOdZuF-m0N3fbRnE1EP/view?usp=sharing)
-   (requires Google Account).
+   (requires Google Account, and remember to tokenized the dataset with the attached vocab).
    <br>
    Example configuration for running on 8 GPUs (adjust `--nproc_per_node`
    and `--gradient_accumulation_steps` to match your setup):
@@ -113,7 +113,8 @@ Execute the project pipeline as follows:
 
 3. **Model evaluation:** Use the trained model for predicting future health timelines based on
    scenarios found in ethos/datasets, like ICU readmission or hospital mortality. Optionally, all
-   results that we generated for our paper can be downloaded from [Google Drive ≈0.8GB](https://drive.google.com/file/d/1BgywarK7osx8xcyzZamOgSBhMJZqKlPy/view?usp=sharing) 
+   results that we generated for our paper can be downloaded
+   from [Google Drive ≈0.8GB](https://drive.google.com/file/d/1BgywarK7osx8xcyzZamOgSBhMJZqKlPy/view?usp=sharing)
    (requires Google Account).
    ```bash
    ethos infer \
