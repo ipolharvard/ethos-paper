@@ -8,7 +8,7 @@ from ethos.utils import get_logger
 
 logger = get_logger()
 
-DEFAULT_DATA_FORMAT = ".zip"
+DEFAULT_DATA_FORMAT = ".csv.gz"
 
 
 def _convert_csv_to_parquet(orig_path: Path, out_dir: Path):

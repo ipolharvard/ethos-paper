@@ -129,7 +129,7 @@ def infer(
             batch_size=None,
             pin_memory=device == "cuda",
             batch_sampler=None,
-            pin_memory_device=f"{device}:{i % n_gpus}",
+            pin_memory_device=f"{device}:{i % n_gpus}" if device == "cuda" else "",
         )
         for i, subset in enumerate(subsets)
     ]
