@@ -87,16 +87,11 @@ def compute_gaussian_metrics(y_true, y_pred, equal_variance=False):
     tpr_values = 1 - cdf_hypothesis_2
     fpr_values = 1 - cdf_hypothesis_1
     # Find the best operating point defined as the closest point to (0,1)
-    dist_squared = fpr_values**2 + (tpr_values - 1) ** 2
+    dist_squared = fpr_values ** 2 + (tpr_values - 1) ** 2
     min_idx = np.argmin(dist_squared)
     fpr = fpr_values[min_idx]
     tpr = tpr_values[min_idx]
 
-    denominator = tpr_values + fpr_values
-    recall_values = tpr_values
-    more_than_zero = denominator > 0
-    precision_values = np.divide(tpr_values, denominator, where=more_than_zero)
-    precision_values[~more_than_zero] = 1
     # =======================================================
     # Compute metrics now using the operating point
     # =======================================================
@@ -107,6 +102,16 @@ def compute_gaussian_metrics(y_true, y_pred, equal_variance=False):
     fn = (1 - tpr) * positives
     tn = (1 - fpr) * negatives
     fp = fpr * negatives
+
+    tp_values = tpr_values * positives
+    fp_values = fpr_values * negatives
+    fn_values = (1 - tpr_values) * positives
+
+    denominator = tp_values + fp_values
+    not_zero = denominator != 0
+    precision_values = np.divide(tp_values, denominator, where=not_zero)
+    precision_values[~not_zero] = 1
+    recall_values = tp_values / (tp_values + fn_values)
 
     # tier 1
     auprc = -np.trapz(precision_values, recall_values)
@@ -198,7 +203,7 @@ def print_auc_roc_plot(res, gaussian_res, title="AUC-ROC", lw=2, clinical=False)
 
 
 def process_readmission_results(
-    filename: str, admission_stoken: str, readmission_period: float
+        filename: str, admission_stoken: str, readmission_period: float
 ) -> pd.DataFrame:
     res_dir = PROJECT_ROOT / "results" / filename
     df = pd.concat(pd.read_json(res_path) for res_path in res_dir.iterdir())
