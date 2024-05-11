@@ -111,6 +111,7 @@ class IcdMixin(TranslationMixin):
         icd_part1 = (
             icd_codes.str[:3].map(self._code_to_name).map(lambda v: "ICD_" + v, na_action="ignore")
         )
+        # TODO: should be 3-5 or 4-6 since it's 3 characters long
         icd_part2 = icd_codes.str[3:6].map(
             lambda v: f"ICD_4-5_{v}" if v else np.nan, na_action="ignore"
         )
