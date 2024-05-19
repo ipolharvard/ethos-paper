@@ -59,7 +59,7 @@ Prepare your dataset for analysis with these steps:
        └── data 
            ├── icd10cm-order-Jan-2021.csv.gz
                ...       
-           ├── mimic-iv-2.2              <== raw data from physionet.org
+           ├── mimic-iv-2.2_Data_parquet <== optional (for faster loading `scripts/convert_csv_to_parquet.py`)
            ├── mimic-iv-2.2_Data         <== processed data (train/test split)
            └── mimic-iv-2.2              <== raw data from physionet.org
                ├── icu
