@@ -191,13 +191,7 @@ def print_auc_roc_plot(res, gaussian_res, title="AUC-ROC", lw=2, clinical=False)
                 f"gauss_accuracy={gaussian_res['accuracy']:.3f}",
             ]
         )
-    anc = AnchoredText(
-        "\n".join(text),
-        loc="lower right",
-        frameon=True,
-        pad=0.3,
-        prop=dict(size=12),
-    )
+    anc = AnchoredText("\n".join(text), loc="lower right", frameon=True, pad=0.3)
     anc.patch.set_boxstyle("round,pad=0.2")
     plt.gca().add_artist(anc)
 
