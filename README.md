@@ -26,7 +26,7 @@ conda activate ethos
 ```
 
 Fetch the project and set it up in the development mode (`-e`) and install all necessary dependencies for
-running notebooks and scripts by executing:
+running notebooks and scripts by executing (`[all]` the all dependencies to run the notebooks):
 ```bash
 git clone https://github.com/ipolharvard/ethos-paper
 cd ethos-paper
