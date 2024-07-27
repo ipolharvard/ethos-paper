@@ -20,14 +20,9 @@ RUN apt update && apt install -y \
         curl && \
     apt clean
 
-# Add the bashrc to start up the container correctly for local development
-COPY docker/container_bashrc /etc/bash.bashrc
-RUN chmod a+rwx /etc/bash.bashrc
-
 # Install Python requirements using the compiled version of the requirements
-RUN pip install --no-cache-dir -U pip setuptools \
-        wheel \
-        importlib-metadata \
+RUN pip install --no-cache-dir -U \
+        setuptools==62.* \
         tqdm \
         h5py \
         pyarrow \

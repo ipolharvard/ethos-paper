@@ -14,8 +14,8 @@ authors = [
 maintainers = [
     { name = "Pawel Renc", email = "prenc@mgh.harvard.edu" },
 ]
+requires-python = ">=3.10"
 dependencies = [
-    'importlib-metadata; python_version>="3.10"',
     "click",
     "colorlog",
     "h5py",

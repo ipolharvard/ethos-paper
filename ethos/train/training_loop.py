@@ -118,7 +118,7 @@ def train_ethos(args):
         model = Ethos(config)
     model.to(device)
     # initialize a GradScaler. If enabled=False scaler is a no-op
-    scaler = th.cuda.amp.GradScaler(enabled=(args.dtype == "float16"))
+    scaler = th.amp.GradScaler(enabled=(args.dtype == "float16"))
 
     # optimizer
     optimizer = model.configure_optimizers(
