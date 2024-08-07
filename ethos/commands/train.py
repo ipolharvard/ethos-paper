@@ -63,8 +63,6 @@ from ethos.train import train_ethos
 @option("--device", default="cuda", type=Choice(["cuda", "cpu"]))
 @option("--dtype", default="bfloat16", type=Choice(["float32", "bfloat16", "float16"]))
 @option("--no_compile", is_flag=True, help="Don't compile the model using Triton.")
-# optional
-@option("--ctx_no_grad", is_flag=True, help="Don't compute gradient for the context tokens.")
 def train(**kwargs):
     """This training script can be run both on a single gpu in debug mode, and also in a larger
     training run with distributed data parallel (ddp).

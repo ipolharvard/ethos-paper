@@ -37,6 +37,7 @@ class TimelineDataset(th.utils.data.Dataset):
         timeline = self.tokens[idx : idx + self.timeline_len + 1]
         x = th.cat((patient_context, timeline[:-1]))
         y = th.cat((patient_context, timeline[1:]))
+        y[: self.context_len] = -100
         return x, y
 
     def _get_patient_context(self, idx: int) -> th.Tensor:
