@@ -182,11 +182,12 @@ class InpatientAdmissionData(TimeData):
             df.discharge_location.map(self._process_discharge_location))
         # include drg codes
         self.drg_codes = self.drg_codes.loc[self.drg_codes.drg_type == "HCFA"].copy()
+        # self.drg_codes.sort_values("description", inplace=True)
         # some codes map to multiple descriptions, we take the first one
-        self.drg_codes.description = self.drg_codes.drg_code.map(
-            self.drg_codes.groupby("drg_code").description.first()
-        )
-        self.drg_codes.description = "DRG//" + unify_str_col(self.drg_codes.description)
+        # self.drg_codes.description = self.drg_codes.drg_code.map(
+        #     self.drg_codes.groupby("drg_code", sort=False).description.first()
+        # )
+        self.drg_codes.description = "DRG//" + unify_str_col(self.drg_codes.drg_code.astype(str))
         df = df.merge(self.drg_codes[["hadm_id", "description"]], on="hadm_id", how="left").drop(
             columns="hadm_id"
         )

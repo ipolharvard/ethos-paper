@@ -126,7 +126,8 @@ class IcdMixin(TranslationMixin):
     @staticmethod
     def _process_icd_pcs_codes(icd_codes: pd.Series) -> pd.DataFrame:
         icd_parts = [
-            icd_codes.str[i].map(lambda v: f"ICD//PCS//{v}", na_action="ignore") for i in range(7)
+            icd_codes.str[i].map(lambda v: f"ICD//PCS//{v.upper()}", na_action="ignore") for i in
+            range(7)
         ]
         icd_codes_df = pd.concat(icd_parts, axis=1)
         icd_codes_df.columns = [f"icd_part{i}" for i in range(1, 8)]
@@ -161,10 +162,10 @@ class AtcMixin(TranslationMixin):
         atc_codes = _atc_codes
         if self._pre_translation is not None:
             atc_codes = atc_codes.map(self._code_to_code)
-        atc_part1 = unify_str_col(atc_codes.str[:3].map(self._code_to_name))
+        atc_part1 = atc_codes.str[:3] + "//" + atc_codes.str[:3].map(self._code_to_name)
         atc_part2 = atc_codes.str[3:4].map(lambda v: f"ATC//4//{v}" if v else np.nan)
         atc_part3 = atc_codes.str[4:].map(lambda v: f"ATC//SFX//{v}" if v else np.nan)
-        atc_codes_df = pd.concat([atc_part1, atc_part2, atc_part3], axis=1)
+        atc_codes_df = pd.concat([unify_str_col(atc_part1), atc_part2, atc_part3], axis=1)
         atc_codes_df.columns = ["atc_part1", "atc_part2", "atc_part3"]
         atc_codes_df["atc_part1"] = "ATC//" + atc_codes_df["atc_part1"]
         return atc_codes_df
