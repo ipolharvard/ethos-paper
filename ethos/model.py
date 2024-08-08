@@ -12,17 +12,6 @@ import torch.nn as nn
 from torch.nn import functional as F
 
 
-class LayerNorm(nn.Module):
-
-    def __init__(self, ndim, bias):
-        super().__init__()
-        self.weight = nn.Parameter(torch.ones(ndim))
-        self.bias = nn.Parameter(torch.zeros(ndim)) if bias else None
-
-    def forward(self, input):
-        return F.layer_norm(input, self.weight.shape, self.weight, self.bias, 1e-5)
-
-
 class CausalSelfAttention(nn.Module):
     def __init__(self, config, attention_weights: Optional[list] = None):
         super().__init__()
@@ -104,9 +93,9 @@ class MLP(nn.Module):
 class Block(nn.Module):
     def __init__(self, config, attention_weights: Optional[list] = None):
         super().__init__()
-        self.ln_1 = LayerNorm(config.n_embd, bias=config.bias)
+        self.ln_1 = nn.LayerNorm(config.n_embd, bias=config.bias)
         self.attn = CausalSelfAttention(config, attention_weights=attention_weights)
-        self.ln_2 = LayerNorm(config.n_embd, bias=config.bias)
+        self.ln_2 = nn.LayerNorm(config.n_embd, bias=config.bias)
         self.mlp = MLP(config)
 
     def forward(self, x):
@@ -119,7 +108,8 @@ class Block(nn.Module):
 class ModelConfig:
     block_size: int = 1024
     vocab_size: int = (
-        50304  # number of tokens in the GPT-2 vocabulary, change to taste if you use a different vocab
+        50304
+        # number of tokens in the GPT-2 vocabulary, change to taste if you use a different vocab
     )
     n_layer: int = 12
     n_head: int = 12
@@ -148,7 +138,7 @@ class Ethos(nn.Module):
                 h=nn.ModuleList(
                     [Block(config, self.attention_weights) for _ in range(config.n_layer)]
                 ),
-                ln_f=LayerNorm(config.n_embd, bias=config.bias),
+                ln_f=nn.LayerNorm(config.n_embd, bias=config.bias),
             )
         )
         self.lm_head = nn.Linear(config.n_embd, config.vocab_size, bias=False)
@@ -187,17 +177,16 @@ class Ethos(nn.Module):
         elif isinstance(module, nn.Embedding):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, idx, targets=None, context_length=0):
+    def forward(self, idx, targets=None):
         device = idx.device
         b, t = idx.size()
         assert (
-            t <= self.config.block_size
+                t <= self.config.block_size
         ), f"Cannot forward sequence of length {t}, block size is only {self.config.block_size}"
         pos = torch.arange(0, t, dtype=torch.long, device=device)  # shape (t)
 
         if self.return_attention:
             self.attention_weights.clear()
-
 
         tok_emb = self.transformer.wte(idx)  # token embeddings of shape (b, t, n_embd)
         pos_emb = self.transformer.wpe(pos)  # position embeddings of shape (t, n_embd)
@@ -209,16 +198,7 @@ class Ethos(nn.Module):
         if targets is not None:
             # if we are given some desired targets also calculate the loss
             logits = self.lm_head(x)
-            loss = F.cross_entropy(
-                logits.view(-1, logits.size(-1)),
-                targets.view(-1),
-                ignore_index=-1,
-                reduction="none",
-            )
-            if context_length:
-                loss.view(logits.size()[:2])[:, :context_length] = 0
-
-            loss = loss.mean()
+            loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets.view(-1))
         else:
             logits = self.lm_head(x[:, [-1], :])
             loss = None
@@ -270,7 +250,7 @@ class Ethos(nn.Module):
         for _ in range(max_new_tokens):
             #
             idx_cond = (
-                idx if idx.size(1) <= self.config.block_size else idx[:, -self.config.block_size :]
+                idx if idx.size(1) <= self.config.block_size else idx[:, -self.config.block_size:]
             )
             logits, _ = self(idx_cond)
             logits = logits[:, -1, :] / temperature
@@ -286,7 +266,7 @@ class Ethos(nn.Module):
     @torch.no_grad()
     def get_next_token(self, tokens, return_probs=False, top_k=None):
         if tokens.size(1) > self.config.block_size:
-            tokens = tokens[:, -self.config.block_size :]
+            tokens = tokens[:, -self.config.block_size:]
         logits, _ = self(tokens)
         logits = logits[:, -1, :]
         if top_k is not None:

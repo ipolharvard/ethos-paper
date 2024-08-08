@@ -128,6 +128,9 @@ def convert_years(years: float, unit: str) -> float:
         print('Invalid unit. Please use "m", "h", "d", "w" or "mt".')
 
 
+def unify_str_col(col: pd.Series) -> pd.Series:
+    return col.str.replace(" ", "_").str.upper().str.replace(",", "").str.replace(".", "")
+
 class DataFrameStoreBackend(FileSystemStoreBackend):
     def load_item(self, path, verbose=1, msg=None):
         full_path = Path(self.location) / PurePath(*path) / "output.pkl"
