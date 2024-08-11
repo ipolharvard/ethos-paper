@@ -6,32 +6,13 @@ from ...constants import PROJECT_DATA
 
 
 class DrugTranslation(Translation):
-    def __init__(self, data_prop):
-        self.data_prop = data_prop
+    def __init__(self):
         self._name_to_code: pd.Series = None
 
     def _create_name_to_code_translation(self) -> pd.Series:
-        drug_to_gsn = SimpleData(
-            "hosp/prescriptions",
-            self.data_prop,
-            use_cols=["drug", "gsn"],
-            no_id_ok=True,
-            dtype=str,
-        ).df
-        drug_to_gsn.gsn = drug_to_gsn.gsn.str.strip()
-        drug_to_gsn.gsn = drug_to_gsn.gsn.str.split(" ")
-        drug_to_gsn = drug_to_gsn.explode("gsn")
-        gsn_to_atc = self._load_gsn_to_atc().set_index("gsn").atc
-        self._name_to_code = (
-            drug_to_gsn.set_index("drug")
-            .gsn.map(gsn_to_atc, na_action="ignore")
-            .reset_index()
-            .drop_duplicates()
-            .dropna()
-            .rename({"gsn": "atc_code"}, axis=1)
-            .set_index("drug")
-            .atc_code
-        )
+        drug_to_atc = self._load_drug_to_atc()
+        drug_to_atc.drug = drug_to_atc.drug.str.strip().str.lower()
+        self._name_to_code = drug_to_atc.drop_duplicates().set_index("drug").atc_code
         return self._name_to_code
 
     def _create_code_to_name_translation(self) -> dict:
@@ -40,9 +21,9 @@ class DrugTranslation(Translation):
         return self._name_to_code.reset_index().set_index("atc_code").drug.to_dict()
 
     @staticmethod
-    def _load_gsn_to_atc() -> pd.Series:
+    def _load_drug_to_atc() -> pd.Series:
         return pd.read_csv(
-            PROJECT_DATA / "gsn_atc_ndc_mapping.csv.gz", usecols=["gsn", "atc"], dtype=str
+            PROJECT_DATA / "mimic_drug_to_atc.csv.gz", dtype=str
         )
 
 
