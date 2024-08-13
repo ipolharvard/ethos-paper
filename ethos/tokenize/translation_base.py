@@ -144,7 +144,9 @@ class IcdMixin(TranslationMixin):
         return self._icd9_to_icd10
 
     def _create_icd_9_to_10_translation(self):
-        version_mapping = pd.read_csv(PROJECT_DATA / self.mapping_filename, dtype=str)
+        version_mapping = pd.read_csv(PROJECT_DATA / self.mapping_filename, dtype=str,
+                                      na_values=["NoDx", "NoPCS"])
+        version_mapping.dropna(subset=["icd_10"], inplace=True)
         version_mapping.drop_duplicates(subset="icd_9", inplace=True)
         version_mapping = version_mapping.groupby("icd_9").icd_10.apply(
             lambda values: min(values, key=len)

@@ -36,7 +36,7 @@ class _IcdTranslation(Translation):
         df = self._load_icd_data()
         return (
             df.loc[df.icd_version == 10]
-            .groupby("long_title")
+            .groupby("long_title", sort=False)
             .icd_code.agg(lambda values: max(values, key=len))
             .to_dict()
         )
@@ -45,7 +45,7 @@ class _IcdTranslation(Translation):
         df = self._load_icd_data()
         return (
             df.loc[df.icd_version == 10]
-            .groupby("icd_code")
+            .groupby("icd_code", sort=False)
             .long_title.agg(lambda values: min(values, key=len))
             .to_dict()
         )
