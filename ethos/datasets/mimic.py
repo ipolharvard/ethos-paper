@@ -73,7 +73,7 @@ class SofaPredictionDataset(ICUStayIdMixin, InferenceDataset):
         if admission_idx - data_start_idx - 1 > self.timeline_len:
             data_start_idx = admission_idx + 1 - self.timeline_len
         patient_context = self._get_patient_context(data_start_idx)
-        timeline = self.tokens[data_start_idx : admission_idx + 1]
+        timeline = self.tokens[data_start_idx: admission_idx + 1]
         x = th.cat((patient_context, timeline))
         return x, {
             "expected": self.tokens[admission_idx + 3].item(),
@@ -116,7 +116,7 @@ class ICUMortalityDataset(ICUStayIdMixin, _AdmissionMortalityBase):
         times = self.times.numpy()
         for i, adm_idx in enumerate(self.admission_indices):
             offset = bisect_left(
-                times[adm_idx : self._get_next_timeline_start(adm_idx)],
+                times[adm_idx: self._get_next_timeline_start(adm_idx)],
                 times[adm_idx] + self.TIME_OFFSET,
             )
             self.admission_indices[i] += offset - 1
@@ -159,7 +159,7 @@ class ICUReadmissionDataset(InferenceDataset):
         )
         adm_dc_or_end_indices = self._match_next_value(adm_indices, dc_or_end_indices)
         has_icu_stay = (adm_icu_dc_indices < adm_dc_or_end_indices) | (
-            adm_icu_adm_indices < adm_dc_or_end_indices
+                adm_icu_adm_indices < adm_dc_or_end_indices
         )
 
         # discard cases where a patient dies during the first ICU stay
@@ -169,8 +169,8 @@ class ICUReadmissionDataset(InferenceDataset):
             (
                 adm_death_idx < adm_icu_dc_idx < adm_dc_or_end_idx
                 for adm_death_idx, adm_icu_dc_idx, adm_dc_or_end_idx in zip(
-                    adm_death_indices, adm_icu_dc_indices, adm_dc_or_end_indices
-                )
+                adm_death_indices, adm_icu_dc_indices, adm_dc_or_end_indices
+            )
             ),
             dtype=bool,
             count=len(adm_indices),
@@ -203,7 +203,7 @@ class ICUReadmissionDataset(InferenceDataset):
             data_start_idx = icu_dc_idx + 1 - self.timeline_len
 
         patient_context = self._get_patient_context(data_start_idx)
-        timeline = self.tokens[data_start_idx : icu_dc_idx + 1]
+        timeline = self.tokens[data_start_idx: icu_dc_idx + 1]
         x = th.cat((patient_context, timeline))
 
         if self.is_readmitted[idx]:
@@ -222,6 +222,60 @@ class ICUReadmissionDataset(InferenceDataset):
                 "patient_id": self.patient_ids[patient_idx].item(),
                 "patient_age": self.times[data_start_idx].item(),
                 "discharge_idx": icu_dc_idx.item(),
+                "year": year,
+            }
+        )
+        return x, y
+
+
+class ICUPredictionDataset(InferenceDataset):
+    def __init__(self, data, encode, block_size: int):
+        super().__init__(data, encode, block_size)
+        self.adm_indices = self._get_indices_of_stokens(ADMISSION_STOKEN)
+        dc_or_icu_adm_or_death_indices = self._get_indices_of_stokens([
+            DISCHARGE_STOKEN, ICU_ADMISSION_STOKEN, SpecialToken.DEATH
+        ])
+
+        if self.adm_indices[-1] > dc_or_icu_adm_or_death_indices[-1]:
+            self.adm_indices = self.adm_indices[:-1]
+
+        self.adm_dc_or_icu_adm_indices = self._match_next_value(self.adm_indices,
+                                                                dc_or_icu_adm_or_death_indices)
+        icu_adm_indices = self._get_indices_of_stokens(ICU_ADMISSION_STOKEN)
+
+        self.ended_up_in_icu = np.isin(self.adm_dc_or_icu_adm_indices, icu_adm_indices)
+
+    def __len__(self) -> int:
+        return len(self.adm_indices)
+
+    def __getitem__(self, idx) -> tuple[th.Tensor, dict]:
+        adm_idx = self.adm_indices[idx] + 2
+        patient_idx = self._get_patient_idx(adm_idx)
+        data_start_idx = self.patient_offsets[patient_idx]
+
+        if adm_idx - data_start_idx - 1 > self.timeline_len:
+            data_start_idx = adm_idx + 1 - self.timeline_len
+
+        patient_context = self._get_patient_context(data_start_idx)
+        timeline = self.tokens[data_start_idx: adm_idx + 1]
+        x = th.cat((patient_context, timeline))
+
+        if self.ended_up_in_icu[idx]:
+            icu_adm_idx = int(self.adm_dc_or_icu_adm_indices[idx])
+            y = {
+                "expected": 1,
+                "true_token_dist": (icu_adm_idx - adm_idx).item(),
+                "true_token_time": (self.times[icu_adm_idx] - self.times[adm_idx]).item(),
+            }
+        else:
+            y = {"expected": 0}
+
+        year = self._get_year_at_timeline_start(patient_idx, self.times[data_start_idx])
+        y.update(
+            {
+                "patient_id": self.patient_ids[patient_idx].item(),
+                "patient_age": self.times[data_start_idx].item(),
+                "admission_idx": adm_idx.item(),
                 "year": year,
             }
         )

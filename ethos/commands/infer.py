@@ -23,7 +23,7 @@ from ethos.datasets import (
     SofaPredictionDataset,
     ICUMortalityDataset,
 )
-from ethos.datasets.mimic import DrgPredictionDataset, ICUReadmissionDataset
+from ethos.datasets.mimic import DrgPredictionDataset, ICUReadmissionDataset, ICUPredictionDataset
 from ethos.inference import Test, run_inference
 from ethos.tokenize import SpecialToken, Vocabulary
 from ethos.utils import load_model_from_checkpoint, load_data, get_logger
@@ -95,6 +95,9 @@ def infer(
         stoi += drg_stokens
     elif test == Test.ICU_READMISSION:
         dataset_cls = ICUReadmissionDataset
+        stoi = [ICU_ADMISSION_STOKEN, DISCHARGE_STOKEN] + stoi
+    elif test == Test.ICU_PREDICTION:
+        dataset_cls = ICUPredictionDataset
         stoi = [ICU_ADMISSION_STOKEN, DISCHARGE_STOKEN] + stoi
     else:
         raise ValueError(f"Unknown test: {test}, available")
