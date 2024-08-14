@@ -47,7 +47,7 @@ class ReadmissionDataset(HadmIdMixin, InferenceDataset):
             y = {"expected": 0}
 
         data_start_idx = self.patient_offsets[patient_idx]
-        if discharge_idx - 1 - data_start_idx > self.timeline_len:
+        if discharge_idx + 1 - data_start_idx > self.timeline_len:
             data_start_idx = discharge_idx + 1 - self.timeline_len
 
         timeline = self.tokens[data_start_idx : discharge_idx + 1]
@@ -57,7 +57,7 @@ class ReadmissionDataset(HadmIdMixin, InferenceDataset):
             {
                 "patient_id": self.patient_ids[patient_idx].item(),
                 "patient_age": self.times[data_start_idx].item(),
-                "discharge_token_idx": discharge_idx.item(),
+                "data_idx": discharge_idx.item(),
             }
         )
         if self.is_mimic:

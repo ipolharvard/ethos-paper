@@ -78,7 +78,7 @@ class SingleAdmissionMortalityDataset(InferenceDataset):
         patient_idx = self._get_patient_idx(self.admission_idx)
         data_start_idx = self.patient_offsets[patient_idx]
         data_end_idx = self.admission_idx + idx
-        if data_end_idx - 1 - data_start_idx > self.timeline_len:
+        if data_end_idx + 1 - data_start_idx > self.timeline_len:
             data_start_idx = data_end_idx + 1 - self.timeline_len
 
         timeline = self.tokens[data_start_idx : data_end_idx + 1]

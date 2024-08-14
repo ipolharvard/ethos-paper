@@ -70,7 +70,7 @@ class SofaPredictionDataset(ICUStayIdMixin, InferenceDataset):
         data_start_idx = self.patient_offsets[patient_idx]
         # shorten the input timeline if the patient history is too long, -1 because we include
         # the admission token
-        if admission_idx - data_start_idx - 1 > self.timeline_len:
+        if admission_idx - data_start_idx + 1 > self.timeline_len:
             data_start_idx = admission_idx + 1 - self.timeline_len
         patient_context = self._get_patient_context(data_start_idx)
         timeline = self.tokens[data_start_idx: admission_idx + 1]
@@ -199,7 +199,7 @@ class ICUReadmissionDataset(InferenceDataset):
         patient_idx = self._get_patient_idx(icu_dc_idx)
         data_start_idx = self.patient_offsets[patient_idx]
 
-        if icu_dc_idx - data_start_idx - 1 > self.timeline_len:
+        if icu_dc_idx - data_start_idx + 1 > self.timeline_len:
             data_start_idx = icu_dc_idx + 1 - self.timeline_len
 
         patient_context = self._get_patient_context(data_start_idx)
@@ -253,7 +253,7 @@ class ICUPredictionDataset(InferenceDataset):
         patient_idx = self._get_patient_idx(adm_idx)
         data_start_idx = self.patient_offsets[patient_idx]
 
-        if adm_idx - data_start_idx - 1 > self.timeline_len:
+        if adm_idx + 1 - data_start_idx > self.timeline_len:
             data_start_idx = adm_idx + 1 - self.timeline_len
 
         patient_context = self._get_patient_context(data_start_idx)
@@ -275,7 +275,7 @@ class ICUPredictionDataset(InferenceDataset):
             {
                 "patient_id": self.patient_ids[patient_idx].item(),
                 "patient_age": self.times[data_start_idx].item(),
-                "admission_idx": adm_idx.item(),
+                "data_idx": adm_idx.item(),
                 "year": year,
             }
         )
