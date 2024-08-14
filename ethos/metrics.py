@@ -197,17 +197,20 @@ def print_auc_roc_plot(res, gaussian_res, title="AUC-ROC", lw=2, clinical=False)
 
 
 def process_readmission_results(
-        filename: str, admission_stoken: str, readmission_period: float
+        filename: str, admission_stoken: str, sample_id_col: str = "discharge_token_idx",
+        readmission_period: float | None = None,
 ) -> pd.DataFrame:
     res_dir = PROJECT_ROOT / "results" / filename
     df = pd.concat(pd.read_json(res_path) for res_path in res_dir.iterdir())
     df.rename(columns={"actual": "actual_token", "patient_id": "subject_id"}, inplace=True)
     df["actual"] = (df.actual_token == admission_stoken).astype(int)
-    df["expected"] = ((df.expected == 1) & (df.true_token_time <= readmission_period)).astype(int)
-    discharge_idx_name = (
-        "discharge_token_idx" if admission_stoken == ADMISSION_STOKEN else "discharge_idx"
-    )
-    df_gb = df.groupby(discharge_idx_name, dropna=False)
+
+    if readmission_period is not None:
+        df["expected"] = (
+                (df.expected == 1) & (df.true_token_time <= readmission_period)
+        ).astype(int)
+
+    df_gb = df.groupby(sample_id_col, dropna=False)
     return (
         df_gb.agg(
             {
@@ -219,7 +222,7 @@ def process_readmission_results(
                 "token_time": "mean",
                 "token_dist": "mean",
                 "patient_age": "first",
-                discharge_idx_name: "first",
+                sample_id_col: "first",
             }
         )
         .join(df_gb.agg(count=("actual", "count")))
