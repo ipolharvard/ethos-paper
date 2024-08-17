@@ -265,8 +265,6 @@ class Ethos(nn.Module):
 
     @torch.no_grad()
     def get_next_token(self, tokens, return_probs=False, top_k=None):
-        if tokens.size(1) > self.config.block_size:
-            tokens = tokens[:, -self.config.block_size:]
         logits, _ = self(tokens)
         logits = logits[:, -1, :]
         if top_k is not None:
