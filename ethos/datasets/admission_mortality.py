@@ -40,7 +40,7 @@ class _AdmissionMortalityBase(InferenceDataset, abc.ABC):
         patient_idx = self._get_patient_idx(admission_idx)
         data_start_idx = self.patient_offsets[patient_idx]
 
-        if admission_idx - data_start_idx - 1 > self.timeline_len:
+        if admission_idx - data_start_idx + 1 > self.timeline_len:
             data_start_idx = admission_idx + 1 - self.timeline_len
 
         patient_context = self._get_patient_context(data_start_idx)
@@ -55,7 +55,7 @@ class _AdmissionMortalityBase(InferenceDataset, abc.ABC):
             "true_token_time": (self.times[toi_idx] - self.times[admission_idx]).item(),
             "patient_id": self.patient_ids[patient_idx].item(),
             "patient_age": self.times[data_start_idx].item(),
-            "admission_token_idx": admission_idx.item(),
+            "data_idx": admission_idx.item(),
             "year": year,
         }
 

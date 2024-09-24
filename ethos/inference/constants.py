@@ -11,3 +11,4 @@ class Test(Enum):
     SOFA_PREDICTION = "sofa"
     ICU_MORTALITY = "icu_mortality"
     ICU_READMISSION = "icu_readmission"
+    ICU_PREDICTION = "icu_prediction"

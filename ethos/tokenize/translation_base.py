@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 
 from ..constants import PROJECT_DATA
-from ..utils import get_logger
+from ..utils import get_logger, unify_str_col
 
 logger = get_logger()
 
@@ -38,11 +38,11 @@ class Translation(abc.ABC):
 
 class TranslationMixin(abc.ABC):
     def __init__(
-        self,
-        translation: Translation,
-        pre_translation: Optional[Translation] = None,
-        *args,
-        **kwargs,
+            self,
+            translation: Translation,
+            pre_translation: Optional[Translation] = None,
+            *args,
+            **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self._translation: Translation = translation
@@ -109,14 +109,15 @@ class IcdMixin(TranslationMixin):
 
     def _process_icd_cm_codes(self, icd_codes: pd.Series) -> pd.DataFrame:
         icd_part1 = (
-            icd_codes.str[:3].map(self._code_to_name).map(lambda v: "ICD_" + v, na_action="ignore")
+            icd_codes.str[:3].map(self._code_to_name).map(lambda v: "ICD//CM//" + v,
+                                                          na_action="ignore")
         )
-        # TODO: should be 3-5 or 4-6 since it's 3 characters long
+        icd_part1 = unify_str_col(icd_part1)
         icd_part2 = icd_codes.str[3:6].map(
-            lambda v: f"ICD_4-5_{v}" if v else np.nan, na_action="ignore"
+            lambda v: f"ICD//CM//3-6//{v}" if v else np.nan, na_action="ignore"
         )
         icd_part3 = icd_codes.str[6:].map(
-            lambda v: f"ICD_6-_{v}" if v else np.nan, na_action="ignore"
+            lambda v: f"ICD//CM//SFX//{v}" if v else np.nan, na_action="ignore"
         )
         icd_codes_df = pd.concat([icd_part1, icd_part2, icd_part3], axis=1)
         icd_codes_df.columns = ["icd_part1", "icd_part2", "icd_part3"]
@@ -125,7 +126,8 @@ class IcdMixin(TranslationMixin):
     @staticmethod
     def _process_icd_pcs_codes(icd_codes: pd.Series) -> pd.DataFrame:
         icd_parts = [
-            icd_codes.str[i].map(lambda v: f"ICD_PCS_{v}", na_action="ignore") for i in range(7)
+            icd_codes.str[i].map(lambda v: f"ICD//PCS//{v.upper()}", na_action="ignore") for i in
+            range(7)
         ]
         icd_codes_df = pd.concat(icd_parts, axis=1)
         icd_codes_df.columns = [f"icd_part{i}" for i in range(1, 8)]
@@ -142,7 +144,9 @@ class IcdMixin(TranslationMixin):
         return self._icd9_to_icd10
 
     def _create_icd_9_to_10_translation(self):
-        version_mapping = pd.read_csv(PROJECT_DATA / self.mapping_filename, dtype=str)
+        version_mapping = pd.read_csv(PROJECT_DATA / self.mapping_filename, dtype=str,
+                                      na_values=["NoDx", "NoPCS"])
+        version_mapping.dropna(subset=["icd_10"], inplace=True)
         version_mapping.drop_duplicates(subset="icd_9", inplace=True)
         version_mapping = version_mapping.groupby("icd_9").icd_10.apply(
             lambda values: min(values, key=len)
@@ -160,10 +164,10 @@ class AtcMixin(TranslationMixin):
         atc_codes = _atc_codes
         if self._pre_translation is not None:
             atc_codes = atc_codes.map(self._code_to_code)
-        atc_part1 = atc_codes.str[:3].map(self._code_to_name)
-        atc_part2 = atc_codes.str[3:4].map(lambda v: f"ATC_4_{v}" if v else np.nan)
-        atc_part3 = atc_codes.str[4:].map(lambda v: f"ATC_SUFFIX_{v}" if v else np.nan)
-        atc_codes_df = pd.concat([atc_part1, atc_part2, atc_part3], axis=1)
+        atc_part1 = atc_codes.str[:3] + "//" + atc_codes.str[:3].map(self._code_to_name)
+        atc_part2 = atc_codes.str[3:4].map(lambda v: f"ATC//4//{v}" if v else np.nan)
+        atc_part3 = atc_codes.str[4:].map(lambda v: f"ATC//SFX//{v}" if v else np.nan)
+        atc_codes_df = pd.concat([unify_str_col(atc_part1), atc_part2, atc_part3], axis=1)
         atc_codes_df.columns = ["atc_part1", "atc_part2", "atc_part3"]
-        atc_codes_df["atc_part1"] = "ATC_" + atc_codes_df["atc_part1"]
+        atc_codes_df["atc_part1"] = "ATC//" + atc_codes_df["atc_part1"]
         return atc_codes_df

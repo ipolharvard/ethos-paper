@@ -11,6 +11,7 @@ from ..constants import SECONDS_IN_YEAR
 from ..translation_base import IcdMixin, AtcMixin
 from ..vocabulary import QStorageContext
 from ...constants import PROJECT_DATA
+from ...utils import unify_str_col
 
 
 class DemographicData(ContextData):
@@ -26,13 +27,13 @@ class DemographicData(ContextData):
         super().__init__("hosp/admissions", data_prop, use_cols=self.COLUMNS_WE_USE, **kwargs)
         self.patient_df = SimpleData("hosp/patients", data_prop, use_cols=["gender"], **kwargs).df
 
-    def _process(self, df: pd.DataFrame) -> dict[int, np.ndarray]:
+    def _process(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.groupby(self.id_col, as_index=False).first()
         df = self.patient_df.merge(df, on=self.id_col, how="left")
         df.race = df.race.map(self._process_race)
         df.loc[df.marital_status.isna(), "marital_status"] = "UNKNOWN"
-        df.marital_status = "MARITAL_" + df.marital_status
-        df.gender = "SEX_" + df.gender
+        df.marital_status = "MARITAL//" + df.marital_status
+        df.gender = "SEX//" + df.gender
         return df
 
     def _process_race(self, v: Optional[str]) -> str:
@@ -47,7 +48,7 @@ class DemographicData(ContextData):
         else:
             v = v[: None if (index := v.find("/")) == -1 else index]
             v = v[: None if (index := v.find(" ")) == -1 else index]
-        return "RACE_" + v
+        return "RACE//" + v
 
 
 class BMIData(ContextData):
@@ -57,7 +58,7 @@ class BMIData(ContextData):
         super().__init__("hosp/omr", data_prop, use_cols=self.COLUMNS_WE_USE, **kwargs)
         self.patient_df = SimpleData("hosp/patients", data_prop, use_cols=[], **kwargs).df
 
-    def _process(self, df: pd.DataFrame) -> dict[int, np.ndarray]:
+    def _process(self, df: pd.DataFrame) -> pd.DataFrame:
         df = (
             df[~df.result_name.isna() & df.result_name.str.startswith("BMI")]
             .groupby(self.id_col, as_index=False)
@@ -69,7 +70,7 @@ class BMIData(ContextData):
                 q_storage, df.result_value.astype(float), "BMI"
             )
         df = self.patient_df.merge(df, on=self.id_col, how="left")
-        df.fillna("BMI_UNKNOWN", inplace=True)
+        df.fillna("BMI//UNKNOWN", inplace=True)
         return df
 
 
@@ -82,9 +83,10 @@ class AgeReferenceData(ContextData):
             "hosp/patients", data_prop, vocab=None, use_cols=self.COLUMNS_WE_USE, **kwargs
         )
 
-    def _process(self, df: pd.DataFrame) -> dict[int, np.ndarray]:
+    def _process(self, df: pd.DataFrame) -> pd.DataFrame:
         df["anchor_year_group"] = (
-            df.anchor_year_group.str.split(" - ", expand=True)[0].astype(int) + 1 - df.anchor_age
+                df.anchor_year_group.str.split(" - ", expand=True)[0].astype(
+                    int) + 1 - df.anchor_age
         )
         df.drop(columns="anchor_age", inplace=True)
         return df
@@ -107,7 +109,7 @@ class DeathData(TimeData):
             **kwargs,
         ).df
 
-    def _process(self, df: pd.DataFrame) -> dict[int, tuple[np.ndarray, np.ndarray]]:
+    def _process(self, df: pd.DataFrame) -> pd.DataFrame:
         _df = df.loc[df.dod.notna()].copy()
         self.admissions_df = self.admissions_df.loc[self.admissions_df.deathtime.notna()].copy()
         subject_that_died_in_hospital = self.admissions_df[self.id_col]
@@ -130,9 +132,9 @@ class EdAdmissionData(TimeData):
             **kwargs,
         )
 
-    def _process(self, df: pd.DataFrame) -> dict[int, tuple[np.ndarray, np.ndarray]]:
+    def _process(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df[~df.edregtime.isna()].reset_index(drop=True)
-        return self._process_bracket_data(df, "ED_ADMISSION", "edregtime", "edouttime")
+        return self._process_bracket_data(df, "ED", "edregtime", "edouttime")
 
 
 class InpatientAdmissionData(TimeData):
@@ -153,7 +155,7 @@ class InpatientAdmissionData(TimeData):
         "CHRONIC/LONG TERM ACUTE CARE",
         "OTHER FACILITY",
     }
-    DRG_UNKNOWN = "UNKNOWN_DRG"
+    DRG_UNKNOWN = "DRG//UNKNOWN"
 
     def __init__(self, data_prop, **kwargs):
         super().__init__(
@@ -171,18 +173,17 @@ class InpatientAdmissionData(TimeData):
             **kwargs,
         ).df
 
-    def _process(self, df: pd.DataFrame) -> dict[int, tuple[np.ndarray, np.ndarray]]:
+    def _process(self, df: pd.DataFrame) -> pd.DataFrame:
         died_during_admission_mask = df.deathtime.notna()
         df.drop(columns="deathtime", inplace=True)
         df["admission_type"] = df.admission_type.map(self._process_admission_type)
-        df["insurance"] = "INSURANCE_" + df.insurance.str.upper()
-        df["discharge_location"] = df.discharge_location.map(self._process_discharge_location)
+        df["insurance"] = "INSURANCE//" + df.insurance.str.upper()
+        df["discharge_location"] = unify_str_col(
+            df.discharge_location.map(self._process_discharge_location))
         # include drg codes
         self.drg_codes = self.drg_codes.loc[self.drg_codes.drg_type == "HCFA"].copy()
-        # some codes map to multiple descriptions, we take the first one
-        self.drg_codes.description = self.drg_codes.drg_code.map(
-            self.drg_codes.groupby("drg_code").description.first()
-        )
+        # use drg codes instead of descriptions
+        self.drg_codes.description = "DRG//" + unify_str_col(self.drg_codes.drg_code.astype(str))
         df = df.merge(self.drg_codes[["hadm_id", "description"]], on="hadm_id", how="left").drop(
             columns="hadm_id"
         )
@@ -199,7 +200,7 @@ class InpatientAdmissionData(TimeData):
                 q_storage.register_values(df.description)
         return self._process_bracket_data(
             df,
-            "INPATIENT_ADMISSION",
+            "INPATIENT",
             "admittime",
             "dischtime",
             right_bracket_cols=["discharge_location", "description"],
@@ -213,14 +214,14 @@ class InpatientAdmissionData(TimeData):
             v = "SCHEDULED"
         else:
             v = "OBSERVATION"
-        return "TYPE_" + v
+        return "ADMISSION_TYPE//" + v
 
     def _process_discharge_location(self, v: str):
         if v in self.DISCHARGE_FACILITIES:
             v = "HEALTHCARE_FACILITY"
         if pd.isnull(v):
             v = "UNKNOWN"
-        return "DISCHARGED_" + v.replace(" ", "_")
+        return "DISCHARGE_LOCATION//" + v
 
 
 class TransferData(TimeData):
@@ -235,8 +236,8 @@ class TransferData(TimeData):
             **kwargs,
         )
 
-    def _process(self, df: pd.DataFrame) -> dict[int, tuple[np.ndarray, np.ndarray]]:
-        df["curr_service"] = "TRANSFER_" + df.curr_service
+    def _process(self, df: pd.DataFrame) -> pd.DataFrame:
+        df["curr_service"] = "TRANSFER//" + df.curr_service
         return df
 
 
@@ -256,15 +257,16 @@ class ICUStayData(TimeData):
             usecols=["stay_id", "first_day_sofa"],
         )
 
-    def _process(self, df: pd.DataFrame) -> dict[int, tuple[np.ndarray, np.ndarray]]:
+    def _process(self, df: pd.DataFrame) -> pd.DataFrame:
         df["sofa_token"] = "SOFA"
+        df.first_careunit = "ICU_TYPE//" + unify_str_col(df.first_careunit)
         df = df.merge(self.sofa_scores, on="stay_id")
         df.drop(columns=["stay_id"], inplace=True)
         with QStorageContext("ICU_STAY", self.vocab) as q_storage:
             df.first_day_sofa = self._convert_to_deciles(
                 q_storage, df.first_day_sofa, "sofa", scheme="equidistant"
             )
-        return self._process_bracket_data(df, "ICU_STAY", "intime", "outtime")
+        return self._process_bracket_data(df, "ICU", "intime", "outtime")
 
 
 class DiagnosisData(IcdMixin, TimeData):
@@ -288,7 +290,7 @@ class DiagnosisData(IcdMixin, TimeData):
             **kwargs,
         ).df
 
-    def _process(self, df: pd.DataFrame) -> dict[int, tuple[np.ndarray, np.ndarray]]:
+    def _process(self, df: pd.DataFrame) -> pd.DataFrame:
         is_icd_9 = self.icd_codes.icd_version == 9
         self.icd_codes.drop(columns="icd_version", inplace=True)
         self.icd_codes.loc[is_icd_9, "icd_code"] = self._convert_icd9_to_icd10(
@@ -324,7 +326,7 @@ class ProcedureData(IcdMixin, TimeData):
             **kwargs,
         )
 
-    def _process(self, df: pd.DataFrame) -> dict[int, tuple[np.ndarray, np.ndarray]]:
+    def _process(self, df: pd.DataFrame) -> pd.DataFrame:
         is_icd_9 = df.icd_version == 9
         df.drop(columns="icd_version", inplace=True)
         df.loc[is_icd_9, "icd_code"] = self._convert_icd9_to_icd10(df.loc[is_icd_9, "icd_code"])
@@ -347,10 +349,10 @@ class BloodPressureData(TimeData):
             "hosp/omr", data_prop, time_col="chartdate", use_cols=self.COLUMNS_WE_USE, **kwargs
         )
 
-    def _process(self, df: pd.DataFrame) -> dict[int, tuple[np.ndarray, np.ndarray]]:
+    def _process(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df[df.result_name.str.startswith("Blood")].copy()
         df.result_name = "BLOOD_PRESSURE"
-        # divide blood pressure measure which is in the following format: 'sbp/dbp'
+        # split blood pressure measurement, that is in the format: 'sbp/dbp'
         df.rename(columns={"result_value": "sbp"}, inplace=True)
         df[["sbp", "dbp"]] = df.sbp.str.split("/", expand=True)
         # manage quantile storage
@@ -372,11 +374,12 @@ class AdministeredMedicationData(AtcMixin, TimeData):
             use_cols=self.COLUMNS_WE_USE,
             **kwargs,
         )
-        self.drug_to_atc = DrugTranslation(data_prop)._create_name_to_code_translation()
+        self.drug_to_atc = DrugTranslation()._create_name_to_code_translation()
 
-    def _process(self, df: pd.DataFrame) -> dict[int, tuple[np.ndarray, np.ndarray]]:
+    def _process(self, df: pd.DataFrame) -> pd.DataFrame:
         df = df.loc[(df.event_txt == "Administered") & df.medication.notna()].copy()
         df.drop(columns=["event_txt"], inplace=True)
+        df.medication = df.medication.str.strip().str.lower()
         with QStorageContext("MEDICATION", self.vocab) as q_storage:
             if q_storage:
                 is_known_mask = df.medication.isin(q_storage.values())
@@ -411,14 +414,15 @@ class LabTestData(TimeData):
             **kwargs,
         ).df
 
-    def _process(self, df: pd.DataFrame) -> dict[int, tuple[np.ndarray, np.ndarray]]:
+    def _process(self, df: pd.DataFrame) -> pd.DataFrame:
         # remove non-numeric tests
         df = df.loc[df.valuenum.notna()].copy()
         # translate lab item ids to lab test names
         df = df.merge(self.lab_items, on="itemid")
-        df.drop(columns=["itemid"], inplace=True)
-        df["label"] = "LAB_" + df.label + "_" + df.valueuom.fillna("no_unit")
-        df.drop(columns=["valueuom"], inplace=True)
+        df["label"] = unify_str_col(
+            "LAB//" + df.label + "//" + df.valueuom.fillna("UNK") + "//" + df.itemid.astype(str)
+        )
+        df.drop(columns=["valueuom", "itemid"], inplace=True)
         # manage quantile storage
         with QStorageContext("LAB_TEST", self.vocab) as q_storage:
             lab_gb = df.groupby("label")
