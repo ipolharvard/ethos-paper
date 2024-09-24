@@ -1,9 +1,9 @@
-# ETHOS: Enhanced Transformer for Health Outcome Simulation
+# [ETHOS: Enhanced Transformer for Health Outcome Simulation](https://www.nature.com/articles/s41746-024-01235-0)
 
 ETHOS is a novel application of the transformer deep-learning architecture, originally
-conceptualized for natural language processing2. This architecture, a cornerstone in large language
-model (LLM) development, is repurposed in ETHOS to analyze health-related data, moving beyond the
-textual focus of traditional LLMs. ETHOS is designed to process Patient Health Timelines (PHTs) -
+conceptualized for natural language processing. This architecture, a cornerstone in large language
+model development, is repurposed in ETHOS to analyze health-related data, moving beyond the
+textual focus of traditional LLMs. ETHOS is designed to process Patient Health Timelines -
 detailed tokenized chronological records of health-related events - to predict future health
 timelines.
 
@@ -129,3 +129,30 @@ Execute the project pipeline as follows:
 4. **Generating results:** Use the Jupyter notebooks to generate all the results and figures:
     - `notebooks/mimic_paper_results_agg.ipynb`
     - `notebooks/embedding_analysis.ipynb`
+
+## Cite us
+
+If you use ETHOS in your research, please cite our paper:
+
+```
+@article{renc_zero_2024,
+	title = {Zero shot health trajectory prediction using transformer},
+	volume = {7},
+	copyright = {2024 The Author(s)},
+	issn = {2398-6352},
+	url = {https://www.nature.com/articles/s41746-024-01235-0},
+	doi = {10.1038/s41746-024-01235-0},
+	abstract = {Integrating modern machine learning and clinical decision-making has great promise for mitigating healthcare’s increasing cost and complexity. We introduce the Enhanced Transformer for Health Outcome Simulation (ETHOS), a novel application of the transformer deep-learning architecture for analyzing high-dimensional, heterogeneous, and episodic health data. ETHOS is trained using Patient Health Timelines (PHTs)—detailed, tokenized records of health events—to predict future health trajectories, leveraging a zero-shot learning approach. ETHOS represents a significant advancement in foundation model development for healthcare analytics, eliminating the need for labeled data and model fine-tuning. Its ability to simulate various treatment pathways and consider patient-specific factors positions ETHOS as a tool for care optimization and addressing biases in healthcare delivery. Future developments will expand ETHOS’ capabilities to incorporate a wider range of data types and data sources. Our work demonstrates a pathway toward accelerated AI development and deployment in healthcare.},
+	language = {en},
+	number = {1},
+	urldate = {2024-09-24},
+	journal = {npj Digital Medicine},
+	author = {Renc, Pawel and Jia, Yugang and Samir, Anthony E. and Was, Jaroslaw and Li, Quanzheng and Bates, David W. and Sitek, Arkadiusz},
+	month = sep,
+	year = {2024},
+	note = {Publisher: Nature Publishing Group},
+	keywords = {Diseases, Health care},
+	pages = {1--10},
+	file = {Full Text PDF:/home/prenc/Zotero/storage/LSRKIQL7/Renc et al. - 2024 - Zero shot health trajectory prediction using trans.pdf:application/pdf},
+}
+```
