@@ -25,7 +25,6 @@ class DataProp:
     dataset_dir: str
     id_col: str
     fold_dir: str
-    fold_suffix: str
     csv_format: str
     module: str
 
@@ -34,15 +33,12 @@ class DataProp:
         dataset = Dataset(dataset_name)
         fold = DataFold(fold_name)
 
-        suffix = "Data"
-        suffix += "Training" if fold == DataFold.TRAIN else "Test"
         return DataProp(
             name=dataset,
             fold=fold,
             dataset_dir="mimic-iv-2.2_Data",
             id_col="subject_id",
-            fold_dir=f"mimic-iv-2.2_{suffix}",
-            fold_suffix=f"_{fold.value}",
+            fold_dir=f"mimic-iv-2.2",
             csv_format="csv.gz",
             module=dataset.value,
         )
