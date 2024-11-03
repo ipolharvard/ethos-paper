@@ -38,7 +38,7 @@ class DataProp:
             fold=fold,
             dataset_dir="mimic-iv-2.2_Data",
             id_col="subject_id",
-            fold_dir=f"mimic-iv-2.2",
+            fold_dir=fold.value,
             csv_format="csv.gz",
             module=dataset.value,
         )
