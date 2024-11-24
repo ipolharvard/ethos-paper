@@ -1,6 +1,6 @@
 #!/bin/bash -l
-#SBATCH --job-name=ethos_train::proj=IRB2023P002279,
-#SBATCH --time=3-0
+#SBATCH --job-name=ethos_train,
+#SBATCH --time=7-0
 #SBATCH --partition=defq
 #SBATCH --gres=gpu:8
 #SBATCH --output=ethos_train.log
@@ -12,12 +12,6 @@ mimic | 1)
   dataset=mimic
   data_path=mimic_train_timelines_p241015.hdf5
   vocab_path=mimic_vocab_t4367.pkl
-  val_frac=0.04
-  ;;
-meds | 2)
-  dataset=mimic
-  data_path=cohort-meds/mimic_train_timelines_p240955.hdf5
-  vocab_path=cohort-meds/mimic_vocab_t4364.pkl
   val_frac=0.04
   ;;
 *)
