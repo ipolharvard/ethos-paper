@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=ethos_infer::proj=IRB2023P002279,
+#SBATCH --job-name=ethos_infer,
 #SBATCH --time=1-00:00:00
 #SBATCH --partition=defq
 #SBATCH --gres=gpu:8
