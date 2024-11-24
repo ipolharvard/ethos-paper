@@ -114,8 +114,8 @@ Execute the project pipeline as follows:
      --n_head 12 \
      --n_embd 768 \
      --dropout 0.3 \
-     --lr $LR \
-     --min_lr $MIN_LR \
+     --lr 0.0006 \
+     --min_lr 0.00001 \
      --log_interval 5 \
      --eval_interval 1000 \
      --gradient_accumulation_steps 8 \
