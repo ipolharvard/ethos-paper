@@ -85,7 +85,6 @@ class SimpleData:
             no_id_ok: bool = False,
             **kwargs,
     ) -> pd.DataFrame:
-        filename = f"{data_name}{data_prop.fold_suffix}"
         dataset_dir = data_prop.dataset_dir
         fold_dir = data_prop.fold_dir
         suffix = "." + data_prop.csv_format
@@ -95,7 +94,7 @@ class SimpleData:
             parquet_suffix = ".parquet"
             parquet_dataset_dir = f"{dataset_dir}_parquet"
             if (
-                    (PROJECT_DATA / parquet_dataset_dir / fold_dir / filename)
+                    (PROJECT_DATA / parquet_dataset_dir / fold_dir / data_name)
                             .with_suffix(parquet_suffix)
                             .exists()
             ):
@@ -107,7 +106,7 @@ class SimpleData:
                     f"Attempted to use parquet data for efficiency, but did not find it. "
                     f"Falling back to CSV."
                 )
-        data_path = (PROJECT_DATA / dataset_dir / data_prop.fold_dir / filename).with_suffix(suffix)
+        data_path = (PROJECT_DATA / dataset_dir / data_prop.fold_dir / data_name).with_suffix(suffix)
 
         _use_cols = use_cols if not load_all_cols else None
         if _use_cols is not None and not no_id_ok:
