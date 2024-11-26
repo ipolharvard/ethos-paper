@@ -1,6 +1,6 @@
 #!/bin/bash -l
-#SBATCH --job-name=ethos_train
-#SBATCH --time=7-00:00:00
+#SBATCH --job-name=ethos_train,
+#SBATCH --time=7-0
 #SBATCH --partition=defq
 #SBATCH --gres=gpu:8
 #SBATCH --output=ethos_train.log
@@ -26,20 +26,25 @@ vocab_path=${datasets_dir}/${vocab_path}
 
 BATCH_SIZE=32
 BLOCK_SIZE=2048
-N_LAYER=10
+N_LAYER=6
 N_HEAD=12
 N_EMBD=768
-DROPOUT=0.1
+DROPOUT=0.3
 LR=0.0006
 MIN_LR=0.00001
 
 model_name="layer_${N_LAYER}_batch_${BATCH_SIZE}_do_${DROPOUT}"
 
 script_body="
-cd /ethos/ethos_deploy
-pip install --no-deps --no-index --no-build-isolation --user -e .
+clear
+cd /ethos
+
 export PATH=\$HOME/.local/bin:\$PATH
 export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/compat/:/.singularity.d/libs/
+# Use other tmp dir to avoid /tmp filling up and preserve the cache across the runs
+export TORCHINDUCTOR_CACHE_DIR=/ethos/torchinductor_cache
+
+pip install --no-deps --no-index --no-build-isolation --user -e .
 
 torchrun --no_python --standalone --nproc_per_node=8 ethos train \
   --data_train $data_path \
@@ -58,8 +63,7 @@ torchrun --no_python --standalone --nproc_per_node=8 ethos train \
   --gradient_accumulation_steps 8 \
   --max_iters 1000000 \
   --lr_decay_iters 50000 \
-  --eval_iters 50 \
-  --ctx_no_grad \
+  --eval_iters 123 \
   --wandb_project "ethos-$dataset" \
   --wandb_run_name $model_name \
   --out_dir "out/${dataset}_${model_name}" \
@@ -71,6 +75,6 @@ singularity exec \
   --contain \
   --nv \
   --writable-tmpfs \
-  --bind "$SCRATCH":/ethos \
-  ethos_latest.sif \
+  --bind "$(pwd)":/ethos \
+  ethos.sif \
   bash -c "${script_body}"

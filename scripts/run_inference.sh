@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --job-name=ethos_infer
+#SBATCH --job-name=ethos_infer,
 #SBATCH --time=1-00:00:00
 #SBATCH --partition=defq
 #SBATCH --gres=gpu:8
@@ -10,14 +10,15 @@ rep_start=1
 rep_stop=20
 model_variant="best_model.pt"
 
-dataset_dir="tokenized_datasets"
+dataset=mimic
+dataset_dir="tokenized_datasets/cohort-meds"
 test_name=$1
 shift 1
 additional_arg="$*"
 
 # Set dataset specific variables
-test_data="${dataset_dir}/mimic_test_timelines_p26758.hdf5"
-vocab="${dataset_dir}/mimic_vocab_t4367.pkl"
+test_data="${dataset_dir}/mimic_test_timelines_p26763.hdf5"
+vocab="${dataset_dir}/mimic_vocab_t4364.pkl"
 model_folder="mimic_layer_6_batch_32_do_0.3"
 
 # Set test_name specific variables
@@ -31,11 +32,11 @@ case $test_name in
 esac
 
 script_body="
-cd /ethos/ethos_deploy
-pip install --no-deps --no-index --no-build-isolation --user -e .
+cd /ethos
 export PATH=\$HOME/.local/bin:\$PATH
-
 export LD_LIBRARY_PATH=/usr/local/cuda/lib64:/usr/local/cuda/compat/
+
+pip install --no-deps --no-index --no-build-isolation --no-cache-dir --user -e .
 
 for i in \$(seq ${rep_start} ${rep_stop}); do
     clear
@@ -61,6 +62,6 @@ singularity exec \
   --contain \
   --nv \
   --writable-tmpfs \
-  --bind "$SCRATCH":/ethos \
-  ethos_latest.sif \
+  --bind "$(pwd)":/ethos \
+  ethos.sif \
   bash -c "${script_body}"

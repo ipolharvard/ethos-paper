@@ -287,9 +287,9 @@ class TimeData(SimpleData, abc.ABC):
         with QStorageContext(prefix.upper(), self.vocab) as q_storage:
             df["period_len"] = self._convert_to_deciles(q_storage, len_of_stay, f"{prefix}_len")
         # [period_start]
-        df[start_col] = f"{prefix}_start".upper()
+        df[start_col] = f"{prefix}//ADMISSION".upper()
         # [period_end]
-        df[end_col] = f"{prefix}_end".upper()
+        df[end_col] = f"{prefix}//DISCHARGE".upper()
         if outcome_death is not None:
             df.loc[outcome_death, end_col] = SpecialToken.DEATH
         # tokens that act as a closing bracket
