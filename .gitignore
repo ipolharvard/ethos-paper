@@ -3,7 +3,6 @@
 # Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
 
 # generally we don't store data files in the repo
-data/
 results/
 cache/
 
