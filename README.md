@@ -13,6 +13,13 @@ events - to predict future health timelines.
 </a>
 </p>
 
+> \[!Note\]
+> In this implementation of ETHOS, the ICD-CM codes were added at the time of inpatient admissions.
+> We acknowledge that this might introduce an information leak, as not all diagnoses are known at that point.
+> To assess the impact, we conducted comprehensive tests to determine whether our results were overstated.
+> Our analysis concluded that this issue affected only the SOFA score prediction.
+> In the paper, we reported $R^2$: 0.648 [0.631, 0.663], while after the correction, it is: 0.598 [0.583, 0.604].
+
 ### Installation
 
 Set up the development environment by following these steps:
