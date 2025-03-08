@@ -28,7 +28,7 @@ def run_inference(loader, args, num_gpus: int = 8):
     context_len = dataset.context_len
     timeline_len = dataset.timeline_len
     max_timeline_size = context_len + timeline_len
-    time_limit = 30 / 365.25 if test_name == Test.READMISSION else 2
+    time_limit = 30 / 365.25 if test_name in (Test.READMISSION, Test.ICU_PREDICTION) else 2
     toi = th.tensor(vocab.encode(stoi), device=device, dtype=th.long)
 
     results = []

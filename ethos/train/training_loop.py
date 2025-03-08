@@ -60,8 +60,6 @@ def train_ethos(args):
     train_dataset = TimelineDataset(train_data, encode=vocab.encode, block_size=args.block_size)
     val_dataset = TimelineDataset(val_data, encode=vocab.encode, block_size=args.block_size)
 
-    context_len = train_dataset.context_len if args.ctx_no_grad else 0
-
     train_dataloader = DataLoader(
         train_dataset,
         batch_size=args.batch_size,
@@ -216,7 +214,7 @@ def train_ethos(args):
                     micro_step == args.gradient_accumulation_steps - 1
                 )
             with ctx:
-                logits, loss = model(X, Y, context_length=context_len)
+                logits, loss = model(X, Y)
                 loss = (
                     loss / args.gradient_accumulation_steps
                 )  # scale the loss to account for gradient accumulation

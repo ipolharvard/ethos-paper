@@ -29,14 +29,21 @@ class TimelineDataset(th.utils.data.Dataset):
         # vocab encode function that translates strings to integers
         self.encode: Callable = encode
 
+    def __repr__(self) -> str:
+        return (
+            f"{self.__class__.__name__}(len={len(self):,}, "
+            f"patient_num={len(set(self.patient_ids)):,})"
+        )
+
     def __len__(self) -> int:
         return len(self.times) - self.timeline_len
 
     def __getitem__(self, idx: int) -> tuple[th.Tensor, th.Tensor]:
         patient_context = self._get_patient_context(idx)
-        timeline = self.tokens[idx : idx + self.timeline_len + 1]
+        timeline = self.tokens[idx: idx + self.timeline_len + 1]
         x = th.cat((patient_context, timeline[:-1]))
         y = th.cat((patient_context, timeline[1:]))
+        y[: self.context_len] = -100
         return x, y
 
     def _get_patient_context(self, idx: int) -> th.Tensor:
@@ -82,7 +89,7 @@ class InferenceDataset(TimelineDataset, abc.ABC):
 
     @staticmethod
     def _match_next_value(
-        to_match: Sequence, match_with: Sequence, always_match: bool = True
+            to_match: Sequence, match_with: Sequence, always_match: bool = True
     ) -> np.ndarray[int | float]:
         """
         Return the next closest values in `match_with` for every corresponding value in `to_match`.
